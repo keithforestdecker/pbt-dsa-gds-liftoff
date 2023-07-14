@@ -1,0 +1,65 @@
+Transform: BC_Compiler
+
+params:
+  workflow_name: kfdeck-liftoff
+  job_name: ${job.job_id}
+  repository: s3://443350608742-awfl/kfdeck/liftoff/${job.job_id}
+
+options: 
+  shell: bash
+  task_role: arn:aws:iam::443350608742:role/ged-rnaseq-pipeline-BClawTaskRole
+
+steps:
+    - liftoff:
+        skip_on_rerun: true 
+        image: quay.io/biocontainers/liftoff:1.6.3--pyhdfd78af_0 
+        inputs:
+          referenceGenome: ${job.referenceGenome}
+          referenceGff3: ${job.referenceGff3}
+          inputGenome: ${job.inputGenome}
+          chromFile: ${job.chromFile} 
+        commands:
+          - liftoff -p 8 -g ${referenceGff3} ${inputGenome} ${referenceGenome} -o liftoff.gff3  -chroms ${chromFile}
+        outputs:
+          liftoffGff3: liftoff.gff3
+        compute:
+          cpus: 8
+          memory: 32 Gb
+          spot: false
+        retry:
+          attempts: 0            
+    - translate:
+        skip_on_rerun: true
+        image: 443350608742.dkr.ecr.us-east-1.amazonaws.com/kfdeck/util/r-samtools-awscli:20.04-1.10-2.2.34
+        inputs:
+          inputGenome: ${job.inputGenome}
+          liftoffGff3: liftoff.gff3 
+        commands:
+          - gffread -C -x liftoff.cds.fasta -g ${inputGenome} liftoff.gff3
+          - transeq -sequence liftoff.cds.fasta -outseq liftoff.prot.fasta;sed -i 's/_1$//g' liftoff.prot.fasta
+        compute:
+          cpus: 1
+          memory: 16 Gb
+          spot: false
+        outputs:
+          liftoffProt: liftoff.prot.fasta
+        retry:
+          attempts: 0          
+    - busco:
+        skip_on_rerun: true
+        image: 443350608742.dkr.ecr.us-east-1.amazonaws.com/kfdeck/genome-annotation/funannotate-dev:1.8.9
+        inputs:
+          liftoffProt: liftoff.prot.fasta 
+          buscoDbPath: ${job.buscoDbPath}
+        commands:
+          - tar -xzvf ${buscoDbPath} &> untar.out
+          - /bin/funannotate-BUSCO2-only.py -c 8 -i liftoff.prot.fasta -m prot -l ${job.buscoDb} -o liftoffBusco
+        outputs:
+          shortSummary: run_liftoffBusco/short_summary_liftoffBusco.txt
+          fullTable: run_liftoffBusco/full_table_liftoffBusco.tsv
+        compute:
+          cpus: 8
+          memory: 16 Gb
+          spot: false
+        retry:
+          attempts: 0

@@ -1,0 +1,9 @@
+{
+	"job_id":"pahangv4_to_UQMa852236_v300",
+	"referenceGenome":"s3://443350608742-awfl/kfdeck/references/Musa/acuminata/pahang/v4/Musa_acuminata_pahang_v4.fasta",
+	"referenceGff3":"s3://443350608742-awfl/kfdeck/references/Musa/acuminata/pahang/v4/Musa_acuminata_pahang_v4.gff3",
+	"inputGenome":"s3://443350608742-awfl/kfdeck/references/Musa/UQMa852-236/v3_0_0/MUSAC_UQMa852-236_v3_0_0.fa",
+	"chromFile":"s3://443350608742-awfl/kfdeck/liftoff/pahangv4_to_UQMa852236_v300/chroms.txt",
+ 	"buscoDbPath": "s3://443350608742-awfl/kfdeck/references/buscoDb/liliopsida_odb10.2017-12-01.tar.gz",
+	"buscoDb": "liliopsida_odb10"
+}
